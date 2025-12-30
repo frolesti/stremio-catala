@@ -16,66 +16,87 @@ const headers = {
     accept: 'application/json'
 };
 
-async function fetchCatalanMovies() {
-    try {
-        console.log("Buscant pel·lícules en català a TMDB...");
-        
-        // 1. Busquem pel·lícules amb idioma original català
-        // Ordenat per popularitat descendent
-        const response = await axios.get(`${TMDB_BASE_URL}/discover/movie`, {
-            headers,
-            params: {
-                with_original_language: 'ca',
-                sort_by: 'popularity.desc',
-                page: 1
-            }
-        });
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        const results = response.data.results;
-        console.log(`S'han trobat ${results.length} pel·lícules.`);
+async function fetchAllContent(endpoint, type) {
+    let allResults = [];
+    let page = 1;
+    let totalPages = 1;
 
-        const catalog = [];
+    console.log(`\nIniciant cerca de ${type === 'movie' ? 'pel·lícules' : 'sèries'}...`);
 
-        // 2. Per a cada pel·lícula, necessitem l'ID d'IMDb (ttXXXXXX)
-        // Stremio funciona millor amb IDs d'IMDb
-        for (const movie of results) {
-            try {
-                // Obtenim detalls externs per treure l'IMDb ID
-                const details = await axios.get(`${TMDB_BASE_URL}/movie/${movie.id}/external_ids`, { headers });
-                const imdbId = details.data.imdb_id;
-
-                if (imdbId) {
-                    catalog.push({
-                        id: imdbId,
-                        type: "movie",
-                        name: movie.title,
-                        poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null,
-                        description: movie.overview,
-                        releaseInfo: movie.release_date ? movie.release_date.substring(0, 4) : null,
-                        language: "ca"
-                    });
-                    console.log(`Afegit: ${movie.title} (${imdbId})`);
-                } else {
-                    console.log(`Saltat (sense IMDb ID): ${movie.title}`);
+    do {
+        try {
+            const response = await axios.get(`${TMDB_BASE_URL}${endpoint}`, {
+                headers,
+                params: {
+                    language: 'ca-ES',
+                    with_original_language: 'ca',
+                    sort_by: 'popularity.desc',
+                    page: page
                 }
+            });
 
-                // Petita pausa per no saturar l'API (rate limiting)
-                await new Promise(resolve => setTimeout(resolve, 100));
+            const results = response.data.results;
+            totalPages = response.data.total_pages;
+            
+            console.log(`Processant pàgina ${page} de ${totalPages} (${results.length} elements)...`);
 
-            } catch (err) {
-                console.error(`Error processant ${movie.title}:`, err.message);
+            for (const item of results) {
+                try {
+                    // Necessitem l'ID d'IMDb
+                    const detailsEndpoint = type === 'movie' ? `/movie/${item.id}/external_ids` : `/tv/${item.id}/external_ids`;
+                    const details = await axios.get(`${TMDB_BASE_URL}${detailsEndpoint}`, { headers });
+                    const imdbId = details.data.imdb_id;
+
+                    if (imdbId) {
+                        allResults.push({
+                            id: imdbId,
+                            type: type,
+                            name: item.title || item.name, // Movies use title, TV uses name
+                            poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+                            description: `Títol original: ${item.original_title || item.original_name}\n\n${item.overview || ''}`,
+                            releaseInfo: (item.release_date || item.first_air_date || '').substring(0, 4),
+                            language: "ca"
+                        });
+                    }
+                    // Rate limiting protection
+                    await sleep(50); 
+                } catch (err) {
+                    console.error(`Error processant item ${item.id}:`, err.message);
+                }
             }
-        }
+            
+            page++;
+            await sleep(200); // Pause between pages
 
-        // 3. Guardem el resultat a catalog.json
+        } catch (error) {
+            console.error(`Error a la pàgina ${page}:`, error.message);
+            break;
+        }
+    } while (page <= totalPages);
+
+    return allResults;
+}
+
+async function generateCatalog() {
+    try {
+        const movies = await fetchAllContent('/discover/movie', 'movie');
+        const series = await fetchAllContent('/discover/tv', 'series');
+
+        const fullCatalog = [...movies, ...series];
+
         const outputPath = path.join(__dirname, 'catalog.json');
-        fs.writeFileSync(outputPath, JSON.stringify(catalog, null, 4));
+        fs.writeFileSync(outputPath, JSON.stringify(fullCatalog, null, 4));
+        
         console.log(`\nCatàleg generat correctament a: ${outputPath}`);
-        console.log(`Total pel·lícules: ${catalog.length}`);
+        console.log(`Total pel·lícules: ${movies.length}`);
+        console.log(`Total sèries: ${series.length}`);
+        console.log(`Total items: ${fullCatalog.length}`);
 
     } catch (error) {
-        console.error("Error connectant amb TMDB:", error.message);
+        console.error("Error general:", error);
     }
 }
 
-fetchCatalanMovies();
+generateCatalog();

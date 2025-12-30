@@ -1,6 +1,49 @@
 const { serveHTTP } = require("stremio-addon-sdk");
 const addonInterface = require("./addon");
+const express = require('express');
+const app = express();
 
-serveHTTP(addonInterface, { port: 7000 });
+// Servim l'addon utilitzant el middleware de l'SDK
+// Això gestiona automàticament les rutes /manifest.json, /catalog/..., etc.
+const addonMiddleware = addonInterface.getRouter();
+app.use('/', addonMiddleware);
 
-console.log("Addon actiu a http://127.0.0.1:7000/");
+// Pàgina d'inici personalitzada per evitar problemes amb HTTPS/HTTP
+app.get('/', (req, res) => {
+    const manifestUrl = "http://127.0.0.1:7000/manifest.json";
+    const stremioUrl = "stremio://127.0.0.1:7000/manifest.json";
+    
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="ca">
+        <head>
+            <meta charset="UTF-8">
+            <title>Stremio Català</title>
+            <style>
+                body { font-family: sans-serif; background: #111; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+                h1 { color: #a376cb; }
+                .btn { background: #8a5aab; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; display: inline-block; }
+                .btn:hover { background: #9b6bc0; }
+                code { background: #333; padding: 5px; border-radius: 3px; }
+            </style>
+        </head>
+        <body>
+            <img src="https://stremio.com/website/stremio-logo-small.png" alt="Stremio Logo" width="100">
+            <h1>Stremio Català</h1>
+            <p>Catàleg de pel·lícules i sèries en català.</p>
+            
+            <a href="${stremioUrl}" class="btn">Instal·lar a Stremio</a>
+            
+            <p style="margin-top: 30px; font-size: 0.9em; color: #aaa;">
+                Si el botó no funciona, copia aquest enllaç a la barra de cerca de Stremio:<br>
+                <code>${manifestUrl}</code>
+            </p>
+        </body>
+        </html>
+    `);
+});
+
+const port = 7000;
+app.listen(port, () => {
+    console.log(`Addon actiu a http://127.0.0.1:${port}/`);
+});
