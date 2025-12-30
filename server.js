@@ -1,11 +1,11 @@
-const { serveHTTP } = require("stremio-addon-sdk");
+const { getRouter } = require("stremio-addon-sdk");
 const addonInterface = require("./addon");
 const express = require('express');
 const app = express();
 
 // Servim l'addon utilitzant el middleware de l'SDK
 // Això gestiona automàticament les rutes /manifest.json, /catalog/..., etc.
-const addonMiddleware = addonInterface.getRouter();
+const addonMiddleware = getRouter(addonInterface);
 app.use('/', addonMiddleware);
 
 // Pàgina d'inici personalitzada per evitar problemes amb HTTPS/HTTP
