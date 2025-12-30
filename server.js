@@ -43,7 +43,14 @@ app.get('/', (req, res) => {
     `);
 });
 
-const port = 7000;
-app.listen(port, () => {
-    console.log(`Addon actiu a http://127.0.0.1:${port}/`);
-});
+const port = process.env.PORT || 7000;
+
+// Exportem l'app per a Vercel (serverless)
+module.exports = app;
+
+// Només arrenquem el servidor si executem el fitxer directament (localment)
+if (require.main === module) {
+    app.listen(port, () => {
+        console.log(`Addon actiu a http://127.0.0.1:${port}/`);
+    });
+}
