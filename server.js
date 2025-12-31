@@ -10,8 +10,10 @@ app.use('/', addonMiddleware);
 
 // Pàgina d'inici personalitzada per evitar problemes amb HTTPS/HTTP
 app.get('/', (req, res) => {
-    const manifestUrl = "http://127.0.0.1:7000/manifest.json";
-    const stremioUrl = "stremio://127.0.0.1:7000/manifest.json";
+    const host = req.headers.host;
+    const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+    const manifestUrl = `${protocol}://${host}/manifest.json`;
+    const stremioUrl = `stremio://${host}/manifest.json`;
     
     res.send(`
         <!DOCTYPE html>

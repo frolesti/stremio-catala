@@ -57,6 +57,8 @@ async function fetchAllContent(endpoint, type) {
                             poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
                             description: `Títol original: ${item.original_title || item.original_name}\n\n${item.overview || ''}`,
                             releaseInfo: (item.release_date || item.first_air_date || '').substring(0, 4),
+                            released: new Date(item.release_date || item.first_air_date || 0).toISOString(), // Data completa per ordenar
+                            popularity: item.popularity, // Popularitat per ordenar
                             language: "ca"
                         });
                     }
