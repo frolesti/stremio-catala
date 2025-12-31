@@ -9,6 +9,8 @@ on:
 jobs:
   update-catalog:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout del codi
