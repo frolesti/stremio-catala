@@ -2,8 +2,8 @@ name: Actualitzar Catàleg
 
 on:
   schedule:
-    # Executar cada diumenge a les 00:00
-    - cron: '0 0 * * 0'
+    # Executar cada dia a les 00:00
+    - cron: '0 0 * * *'
   workflow_dispatch: # Permet executar manualment des de GitHub
 
 jobs:
