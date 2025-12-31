@@ -7,7 +7,9 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_TOKEN = process.env.TMDB_READ_TOKEN;
 
 if (!TMDB_TOKEN) {
-    console.error("Error: TMDB_READ_TOKEN no està definit al fitxer .env");
+    console.error("Error: La variable d'entorn TMDB_READ_TOKEN no està definida.");
+    console.error("Si estàs en local, assegura't de tenir el fitxer .env.");
+    console.error("Si estàs a GitHub Actions, assegura't d'haver configurat el Secret al repositori.");
     process.exit(1);
 }
 
