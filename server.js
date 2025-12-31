@@ -30,7 +30,7 @@ app.get('/', (req, res) => {
             </style>
         </head>
         <body>
-            <img src="https://stremio.com/website/stremio-logo-small.png" alt="Stremio Logo" width="100">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Stremio_logo.png/240px-Stremio_logo.png" alt="Stremio Logo" width="100">
             <h1>Stremio Català</h1>
             <p>Catàleg de pel·lícules i sèries en català.</p>
             
