@@ -39,7 +39,7 @@ app.get('/', (req, res) => {
                     content: "";
                     position: absolute;
                     top: 0; left: 0; width: 100%; height: 100%;
-                    background: rgba(0, 0, 0, 0.85);
+                    background: rgba(0, 0, 0, 0.60);
                     z-index: -1;
                 }
                 h1 { color: #fff; margin-bottom: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
@@ -47,12 +47,16 @@ app.get('/', (req, res) => {
                 .btn { background: #8a5aab; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; display: inline-block; transition: background 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
                 .btn:hover { background: #9b6bc0; }
                 code { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; display: block; margin-top: 10px; word-break: break-all; border: 1px solid rgba(255,255,255,0.2); }
+                .description { max-width: 600px; text-align: center; line-height: 1.6; margin-bottom: 20px; color: #ddd; }
             </style>
         </head>
         <body>
             <img src="https://stremio.com/website/stremio-logo-small.png" alt="Stremio Logo" class="logo">
-            <h1>Stremio Català</h1>
-            <p>Catàleg de pel·lícules i sèries en català.</p>
+            <h1>Stremio en Català</h1>
+            <div class="description">
+                <p>Aquest addon recopila automàticament pel·lícules i sèries disponibles en català des de TMDB.</p>
+                <p>El catàleg s'actualitza diàriament i mostra el contingut ordenat per popularitat i data d'estrena, prioritzant les novetats més destacades.</p>
+            </div>
             
             <a href="${stremioUrl}" class="btn">Instal·lar a Stremio</a>
             
@@ -60,7 +64,7 @@ app.get('/', (req, res) => {
                 Si el botó no funciona, copia aquest enllaç a la barra de cerca de Stremio:<br>
                 <code>${manifestUrl}</code>
             </p>
-            <p style="margin-top: 10px; font-size: 0.7em; color: #888;">v1.3</p>
+            <p style="margin-top: 10px; font-size: 0.7em; color: #888;">v1.4</p>
         </body>
         </html>
     `);
