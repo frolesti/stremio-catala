@@ -1,6 +1,8 @@
 name: Actualitzar Catàleg
 
 on:
+  push:
+    branches: [ "main" ]
   schedule:
     # Executar cada dia a les 00:00
     - cron: '0 0 * * *'
