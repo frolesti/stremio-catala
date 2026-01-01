@@ -34,4 +34,10 @@ jobs:
         git config --global user.name 'GitHub Action'
         git config --global user.email 'action@github.com'
         git add catalog.json
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Actualització automàtica del catàleg" && git push)
+        # Comprovem si hi ha canvis abans de fer commit
+        if git diff --staged --quiet; then
+          echo "No hi ha canvis al catàleg."
+        else
+          git commit -m "Actualització automàtica del catàleg"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+        fi
