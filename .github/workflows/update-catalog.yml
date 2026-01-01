@@ -39,5 +39,6 @@ jobs:
           echo "No hi ha canvis al catàleg."
         else
           git commit -m "Actualització automàtica del catàleg"
+          git pull --rebase origin main
           git push
         fi
