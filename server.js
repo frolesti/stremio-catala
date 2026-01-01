@@ -22,15 +22,35 @@ app.get('/', (req, res) => {
             <meta charset="UTF-8">
             <title>Stremio Català</title>
             <style>
-                body { font-family: sans-serif; background: #111; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-                h1 { color: #a376cb; }
-                .btn { background: #8a5aab; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; display: inline-block; }
+                body { 
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                    background: #111 url('https://images.unsplash.com/photo-1574267432553-4b4628081c31?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed; 
+                    background-size: cover;
+                    color: #fff; 
+                    display: flex; 
+                    flex-direction: column; 
+                    align-items: center; 
+                    justify-content: center; 
+                    height: 100vh; 
+                    margin: 0; 
+                    position: relative;
+                }
+                body::before {
+                    content: "";
+                    position: absolute;
+                    top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0, 0, 0, 0.85);
+                    z-index: -1;
+                }
+                h1 { color: #fff; margin-bottom: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+                .logo { width: 120px; margin-bottom: 20px; }
+                .btn { background: #8a5aab; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; display: inline-block; transition: background 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
                 .btn:hover { background: #9b6bc0; }
-                code { background: #333; padding: 5px; border-radius: 3px; }
+                code { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; display: block; margin-top: 10px; word-break: break-all; border: 1px solid rgba(255,255,255,0.2); }
             </style>
         </head>
         <body>
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Stremio_logo.png/240px-Stremio_logo.png" alt="Stremio Logo" width="100">
+            <img src="https://stremio.com/website/stremio-logo-small.png" alt="Stremio Logo" class="logo">
             <h1>Stremio Català</h1>
             <p>Catàleg de pel·lícules i sèries en català.</p>
             
@@ -40,7 +60,7 @@ app.get('/', (req, res) => {
                 Si el botó no funciona, copia aquest enllaç a la barra de cerca de Stremio:<br>
                 <code>${manifestUrl}</code>
             </p>
-            <p style="margin-top: 10px; font-size: 0.7em; color: #555;">v1.2</p>
+            <p style="margin-top: 10px; font-size: 0.7em; color: #888;">v1.3</p>
         </body>
         </html>
     `);
