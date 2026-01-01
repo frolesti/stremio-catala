@@ -40,7 +40,7 @@ app.get('/', (req, res) => {
                 Si el botó no funciona, copia aquest enllaç a la barra de cerca de Stremio:<br>
                 <code>${manifestUrl}</code>
             </p>
-            <p style="margin-top: 10px; font-size: 0.7em; color: #555;">v1.1</p>
+            <p style="margin-top: 10px; font-size: 0.7em; color: #555;">v1.2</p>
         </body>
         </html>
     `);
