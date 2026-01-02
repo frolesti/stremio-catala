@@ -5,6 +5,7 @@ const manifest = {
     "version": "1.0.0",
     "name": "Stremio en Català",
     "description": "Catàleg de pel·lícules en català.",
+    "logo": "https://stremio-en-catala.vercel.app/logo.svg",
     "resources": [
         "catalog"
     ],
