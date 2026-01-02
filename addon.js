@@ -20,7 +20,7 @@ const manifest = {
             "extra": [
                 { "name": "search", "isRequired": false },
                 { "name": "skip", "isRequired": false },
-                { "name": "sort", "options": ["Popularitat", "Més recents", "Més antigues"], "isRequired": false }
+                { "name": "sort", "options": ["Més recents", "Popularitat", "Més antigues"], "isRequired": false }
             ]
         },
         {
@@ -30,7 +30,7 @@ const manifest = {
             "extra": [
                 { "name": "search", "isRequired": false },
                 { "name": "skip", "isRequired": false },
-                { "name": "sort", "options": ["Popularitat", "Més recents", "Més antigues"], "isRequired": false }
+                { "name": "sort", "options": ["Més recents", "Popularitat", "Més antigues"], "isRequired": false }
             ]
         }
     ]
@@ -62,8 +62,8 @@ builder.defineCatalogHandler(({type, id, extra}) => {
     }
 
     // 3. Ordenació (Sort)
-    // Per defecte ordenem per popularitat si no s'especifica res
-    const sortMode = extra.sort || "Popularitat";
+    // Per defecte ordenem per data (més recents) si no s'especifica res
+    const sortMode = extra.sort || "Més recents";
 
     if (sortMode === "Més recents") {
         results.sort((a, b) => new Date(b.released) - new Date(a.released));
