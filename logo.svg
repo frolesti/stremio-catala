@@ -1,0 +1,24 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="shape">
+      <rect x="76" y="76" width="360" height="360" rx="60" ry="60" transform="rotate(45 256 256)" />
+    </clipPath>
+  </defs>
+  
+  <!-- Background Shape with Senyera Stripes -->
+  <g clip-path="url(#shape)">
+    <!-- Yellow Background -->
+    <rect x="0" y="0" width="512" height="512" fill="#FCE100" />
+    
+    <!-- Red Vertical Stripes (Centered) -->
+    <!-- Width 56px, Spacing 56px -->
+    <rect x="60" y="0" width="56" height="512" fill="#DA121A" />
+    <rect x="172" y="0" width="56" height="512" fill="#DA121A" />
+    <rect x="284" y="0" width="56" height="512" fill="#DA121A" />
+    <rect x="396" y="0" width="56" height="512" fill="#DA121A" />
+  </g>
+
+  <!-- Play Button (White Triangle) -->
+  <!-- Centered visually in the diamond -->
+  <path d="M210 170 L350 256 L210 342 Z" fill="white" filter="drop-shadow(0px 0px 10px rgba(0,0,0,0.3))"/>
+</svg>

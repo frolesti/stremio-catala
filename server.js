@@ -1,7 +1,13 @@
 const { getRouter } = require("stremio-addon-sdk");
 const addonInterface = require("./addon");
 const express = require('express');
+const path = require('path');
 const app = express();
+
+// Servim el logo estàticament
+app.get('/logo.svg', (req, res) => {
+    res.sendFile(path.join(__dirname, 'logo.svg'));
+});
 
 // Servim l'addon utilitzant el middleware de l'SDK
 // Això gestiona automàticament les rutes /manifest.json, /catalog/..., etc.
@@ -20,8 +26,7 @@ app.get('/', (req, res) => {
         <html lang="ca">
         <head>
             <meta charset="UTF-8">
-            <title>Stremio Català</title>
-            <style>
+            <title>Stremio Català</title>            <link rel="icon" href="/logo.svg" type="image/svg+xml">            <style>
                 body { 
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
                     background: #111 url('https://images.unsplash.com/photo-1574267432553-4b4628081c31?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed; 
@@ -51,7 +56,7 @@ app.get('/', (req, res) => {
             </style>
         </head>
         <body>
-            <img src="https://stremio.com/website/stremio-logo-small.png" alt="Stremio Logo" class="logo">
+            <img src="/logo.svg" alt="Stremio Català Logo" class="logo">
             <h1>Stremio en Català</h1>
             <div class="description">
                 <p>Aquest addon recopila automàticament pel·lícules i sèries disponibles en català des de TMDB.</p>
@@ -64,7 +69,7 @@ app.get('/', (req, res) => {
                 Si el botó no funciona, copia aquest enllaç a la barra de cerca de Stremio:<br>
                 <code>${manifestUrl}</code>
             </p>
-            <p style="margin-top: 10px; font-size: 0.7em; color: #888;">v1.4</p>
+            <p style="margin-top: 10px; font-size: 0.7em; color: #888;">v1.5</p>
         </body>
         </html>
     `);
