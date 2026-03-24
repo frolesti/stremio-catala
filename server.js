@@ -4,6 +4,9 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
+// Obtenim la versió del manifest
+const manifest = addonInterface.manifest;
+
 // Servim el logo estàticament
 app.get('/logo.svg', (req, res) => {
     res.sendFile(path.join(__dirname, 'logo.svg'));
@@ -51,8 +54,11 @@ app.get('/', (req, res) => {
                 .logo { width: 120px; margin-bottom: 20px; }
                 .btn { background: #8a5aab; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; display: inline-block; transition: background 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
                 .btn:hover { background: #9b6bc0; }
-                code { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; display: block; margin-top: 10px; word-break: break-all; border: 1px solid rgba(255,255,255,0.2); }
+                code { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; display: block; margin-top: 10px; word-break: break-all; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; user-select: none; position: relative; transition: background 0.3s; }
+                code:hover { background: rgba(255,255,255,0.15); }
+                code.copied { background: rgba(138, 90, 171, 0.4); }
                 .description { max-width: 600px; text-align: center; line-height: 1.6; margin-bottom: 20px; color: #ddd; }
+                .copy-feedback.show { opacity: 1; }
             </style>
         </head>
         <body>
@@ -65,11 +71,11 @@ app.get('/', (req, res) => {
             
             <a href="${stremioUrl}" class="btn">Instal·lar a Stremio</a>
             
-            <p style="margin-top: 30px; font-size: 0.9em; color: #aaa;">
+            <p style="margin-top: 30px; font-size: 0.9em; color: #aaa; position: relative;">
                 Si el botó no funciona, copia aquest enllaç a la barra de cerca de Stremio:<br>
-                <code>${manifestUrl}</code>
+                <code id="manifestLink" onclick="navigator.clipboard.writeText('${manifestUrl}').then(() => { this.classList.add('copied'); this.textContent = '✓ Copiat al porta-retalls!'; setTimeout(() => { this.classList.remove('copied'); this.textContent = '${manifestUrl}'; }, 1500); })" title="Clica per copiar">${manifestUrl}</code>
             </p>
-            <p style="margin-top: 10px; font-size: 0.7em; color: #888;">v1.5</p>
+            <p style="margin-top: 10px; font-size: 0.7em; color: #888;">v${manifest.version}</p>
         </body>
         </html>
     `);
