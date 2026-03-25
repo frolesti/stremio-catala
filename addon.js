@@ -3,13 +3,17 @@ const fetch = require("node-fetch");
 
 const manifest = {
     "id": "org.stremio.catala",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "name": "Stremio en Català",
-    "description": "Catàleg de pel·lícules en català.",
+    "description": "Catàleg de pel·lícules i sèries en català amb enllaços a 3Cat i Filmin.",
     "logo": "https://stremio-en-catala.vercel.app/logo.svg",
     "resources": [
         "catalog",
-        "stream"
+        {
+            "name": "stream",
+            "types": ["movie", "series"],
+            "idPrefixes": ["tt"]
+        }
     ],
     "types": [
         "movie",
@@ -102,64 +106,113 @@ function generateSlug(title) {
         .replace(/^-|-$/g, '');                              // Treure guions al principi/final
 }
 
+// Extreure l'ID base d'IMDB (sense temporada/episodi)
+// Stremio envia "tt1234567:1:3" per episodis de sèries
+function getBaseImdbId(id) {
+    return id.split(':')[0];
+}
+
+// Obtenir el títol d'un contingut via Cinemeta (l'addon oficial de Stremio)
+// Això ens permet oferir streams per QUALSEVOL contingut, no només el nostre catàleg
+async function getTitleFromCinemeta(type, imdbId) {
+    try {
+        const url = `https://v3-cinemeta.strem.io/meta/${type}/${imdbId}.json`;
+        const response = await fetch(url, { timeout: 3000 });
+        if (response.ok) {
+            const data = await response.json();
+            return data.meta ? data.meta.name : null;
+        }
+    } catch (error) {
+        console.error("Error fetching Cinemeta:", error.message);
+    }
+    return null;
+}
+
+// Cache simple en memòria per evitar repetir peticions HEAD a 3Cat
+const threeCatCache = new Map();
+
+async function check3CatDirect(slug) {
+    if (threeCatCache.has(slug)) return threeCatCache.get(slug);
+    
+    try {
+        const url = `https://www.3cat.cat/3cat/${slug}/`;
+        const response = await fetch(url, { method: 'HEAD', redirect: 'manual', timeout: 3000 });
+        const exists = response.status === 200;
+        threeCatCache.set(slug, exists);
+        // Limitar cache a 500 entrades
+        if (threeCatCache.size > 500) {
+            const firstKey = threeCatCache.keys().next().value;
+            threeCatCache.delete(firstKey);
+        }
+        return exists;
+    } catch (error) {
+        console.error("Error checking 3Cat:", error.message);
+        return false;
+    }
+}
+
 // Handler per streams - integració amb 3Cat i Filmin
+// Funciona per a QUALSEVOL contingut (no només el nostre catàleg)
 builder.defineStreamHandler(async ({type, id}) => {
     console.log("request for streams: "+type+" "+id);
 
-    // Busquem la pel·lícula/sèrie al nostre catàleg
-    const item = catalog.find(meta => meta.id === id);
+    // 1. Extreure l'IMDB ID base (sense temporada/episodi per sèries)
+    const baseImdbId = getBaseImdbId(id);
+
+    // 2. Buscar el títol: primer al nostre catàleg, després a Cinemeta
+    let title = null;
     
-    if (!item) {
-        console.log(`Item not found in catalog: ${id}`);
-        return Promise.resolve({ streams: [] });
-    }
-
-    console.log(`Searching streams for: "${item.name}"`);
-    const streams = [];
-    const encodedName = encodeURIComponent(item.name);
-    const slug = generateSlug(item.name);
-
-    // 1. Intentem trobar un enllaç directe a 3Cat
-    try {
-        const threeCatDirectUrl = `https://www.3cat.cat/3cat/${slug}/`;
-        const response = await fetch(threeCatDirectUrl, { method: 'HEAD', redirect: 'manual' });
-        
-        if (response.status === 200) {
-            console.log(`  ✓ 3Cat direct match: ${threeCatDirectUrl}`);
-            streams.push({
-                name: "3Cat",
-                title: `▶ Veure "${item.name}" a 3Cat`,
-                externalUrl: threeCatDirectUrl
-            });
+    const catalogItem = catalog.find(meta => meta.id === baseImdbId);
+    if (catalogItem) {
+        title = catalogItem.name;
+        console.log(`  Found in catalog: "${title}"`);
+    } else {
+        // Fallback: obtenir títol de Cinemeta (addon oficial de Stremio)
+        title = await getTitleFromCinemeta(type, baseImdbId);
+        if (title) {
+            console.log(`  Found via Cinemeta: "${title}"`);
         } else {
-            console.log(`  ✗ 3Cat direct (${response.status}): ${slug}`);
+            console.log(`  Title not found for: ${baseImdbId}`);
+            return Promise.resolve({ streams: [] });
         }
-    } catch (error) {
-        console.error("Error comprovant 3Cat directe:", error.message);
     }
 
-    // 2. Sempre afegim cerca a 3Cat (pot haver-hi episodis o contingut relacionat)
-    const threeCatSearchUrl = `https://www.3cat.cat/3cat/cercador/?text=${encodedName}`;
+    const streams = [];
+    const encodedName = encodeURIComponent(title);
+    const slug = generateSlug(title);
+
+    // 3. Intentem trobar un enllaç directe a 3Cat
+    const has3CatPage = await check3CatDirect(slug);
+    if (has3CatPage) {
+        const threeCatDirectUrl = `https://www.3cat.cat/3cat/${slug}/`;
+        console.log(`  ✓ 3Cat direct: ${threeCatDirectUrl}`);
+        streams.push({
+            name: "3Cat",
+            title: `▶ Veure "${title}" a 3Cat`,
+            externalUrl: threeCatDirectUrl
+        });
+    }
+
+    // 4. Sempre afegim cerca a 3Cat
     streams.push({
         name: "3Cat",
-        title: `🔍 Cercar "${item.name}" a 3Cat`,
-        externalUrl: threeCatSearchUrl
+        title: `🔍 Cercar "${title}" a 3Cat`,
+        externalUrl: `https://www.3cat.cat/3cat/cercador/?text=${encodedName}`
     });
 
-    // 3. Cerca a Filmin (plataforma de cinema en català)
-    const filminSearchUrl = `https://www.filmin.cat/cerca?q=${encodedName}`;
+    // 5. Cerca a Filmin
     streams.push({
         name: "Filmin",
-        title: `🔍 Cercar "${item.name}" a FilminCAT`,
-        externalUrl: filminSearchUrl
+        title: `🔍 Cercar "${title}" a FilminCAT`,
+        externalUrl: `https://www.filmin.cat/cerca?q=${encodedName}`
     });
 
-    console.log(`Returning ${streams.length} streams`);
+    console.log(`  → ${streams.length} streams for "${title}"`);
     return Promise.resolve({ 
         streams,
-        cacheMaxAge: 3600,           // Cache streams 1h
-        staleRevalidate: 1800,       // Servir stale durant 30min mentre es revalida
-        staleError: 86400            // Servir stale durant 1 dia si hi ha error
+        cacheMaxAge: 3600,
+        staleRevalidate: 1800,
+        staleError: 86400
     });
 });
 
