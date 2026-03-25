@@ -1,8 +1,6 @@
 name: Actualitzar Catàleg
 
 on:
-  push:
-    branches: [ "main" ]
   schedule:
     # Executar cada dia a les 00:00
     - cron: '0 0 * * *'
@@ -42,7 +40,15 @@ jobs:
         if git diff --staged --quiet; then
           echo "No hi ha canvis al catàleg."
         else
-          git commit -m "Actualització automàtica del catàleg"
-          git pull --rebase origin main
-          git push
+          # Busquem si ja existeix un commit d'actualització automàtica
+          LAST_MSG=$(git log -1 --format=%s)
+          if [ "$LAST_MSG" = "Actualització automàtica del catàleg" ]; then
+            # Amend: sobreescrivim l'últim commit per no contaminar l'historial
+            git commit --amend --no-edit
+            git push --force-with-lease
+          else
+            git commit -m "Actualització automàtica del catàleg"
+            git pull --rebase origin main
+            git push
+          fi
         fi

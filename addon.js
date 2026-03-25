@@ -2,9 +2,9 @@ const { addonBuilder } = require("stremio-addon-sdk");
 const fetch = require("node-fetch");
 
 const manifest = {
-    "id": "org.stremio.catala.dev",
-    "version": "1.2.0",
-    "name": "Stremio en Català (Local Test)",
+    "id": "org.stremio.catala",
+    "version": "1.3.0",
+    "name": "Stremio en Català",
     "description": "Catàleg de pel·lícules en català.",
     "logo": "https://stremio-en-catala.vercel.app/logo.svg",
     "resources": [
@@ -90,7 +90,19 @@ builder.defineCatalogHandler(({type, id, extra}) => {
     });
 });
 
-// Handler per streams - integració amb 3Cat
+// Funció per generar un slug compatible amb 3Cat a partir del títol
+function generateSlug(title) {
+    return title
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Treure accents
+        .replace(/l·l/g, 'll')                             // l·l -> ll
+        .replace(/[^a-z0-9\s-]/g, '')                      // Treure caràcters especials
+        .replace(/\s+/g, '-')                               // Espais -> guions
+        .replace(/-+/g, '-')                                // Múltiples guions -> un
+        .replace(/^-|-$/g, '');                              // Treure guions al principi/final
+}
+
+// Handler per streams - integració amb 3Cat i Filmin
 builder.defineStreamHandler(async ({type, id}) => {
     console.log("request for streams: "+type+" "+id);
 
@@ -102,72 +114,45 @@ builder.defineStreamHandler(async ({type, id}) => {
         return Promise.resolve({ streams: [] });
     }
 
-    console.log(`Searching for: "${item.name}"`);
+    console.log(`Searching streams for: "${item.name}"`);
     const streams = [];
+    const encodedName = encodeURIComponent(item.name);
+    const slug = generateSlug(item.name);
 
+    // 1. Intentem trobar un enllaç directe a 3Cat
     try {
-        // Cerquem a l'API de 3Cat
-        const searchQuery = encodeURIComponent(item.name);
-        const searchUrl = `https://api.3cat.cat/cercador/tot?_format=json&text=${searchQuery}&tipologia=DTY_VIDEO_MM,WCR_AUDIO_MM&items_pagina=10&pagina=1&version=2.0`;
+        const threeCatDirectUrl = `https://www.3cat.cat/3cat/${slug}/`;
+        const response = await fetch(threeCatDirectUrl, { method: 'HEAD', redirect: 'manual' });
         
-        console.log(`3Cat API URL: ${searchUrl}`);
-        const response = await fetch(searchUrl);
-        const data = await response.json();
-
-        console.log(`API status: ${data.resposta?.status}, items: ${data.resposta?.items?.num || 0}`);
-
-        if (data.resposta && data.resposta.status === "OK" && data.resposta.items && data.resposta.items.item) {
-            const results = Array.isArray(data.resposta.items.item) 
-                ? data.resposta.items.item 
-                : [data.resposta.items.item];
-
-            console.log(`Found ${results.length} results`);
-            results.slice(0, 3).forEach((r, i) => {
-                console.log(`  [${i+1}] ${r.titol || r.title || 'N/A'}`);
+        if (response.status === 200) {
+            console.log(`  ✓ 3Cat direct match: ${threeCatDirectUrl}`);
+            streams.push({
+                name: "3Cat",
+                title: `▶ Veure "${item.name}" a 3Cat`,
+                externalUrl: threeCatDirectUrl
             });
-
-            // Trobem el millor match comparant títols
-            const normalizedTitle = item.name.toLowerCase()
-                .replace(/[^a-z0-9\s]/g, '')
-                .trim();
-
-            console.log(`Normalized title: "${normalizedTitle}"`);
-
-            const bestMatch = results.find(result => {
-                const resultTitle = (result.titol || result.title || '').toLowerCase()
-                    .replace(/[^a-z0-9\s]/g, '')
-                    .trim();
-                
-                // Match exacte o que conté el títol
-                const matches = resultTitle === normalizedTitle || 
-                       resultTitle.includes(normalizedTitle) ||
-                       normalizedTitle.includes(resultTitle);
-                
-                if (matches) {
-                    console.log(`  ✓ MATCH: "${resultTitle}"`);
-                }
-                
-                return matches;
-            });
-
-            if (bestMatch && bestMatch.id) {
-                console.log(`Using: ${bestMatch.titol || bestMatch.title} (${bestMatch.id})`);
-                // Creem un stream amb enllaç a 3Cat
-                const threeCatUrl = `https://www.3cat.cat/3cat/directe/${bestMatch.id}`;
-                
-                streams.push({
-                    name: "3Cat",
-                    title: "Veure a 3Cat",
-                    url: threeCatUrl,
-                    externalUrl: threeCatUrl
-                });
-            } else {
-                console.log(`No match found`);
-            }
+        } else {
+            console.log(`  ✗ 3Cat direct (${response.status}): ${slug}`);
         }
     } catch (error) {
-        console.error("Error cercant a 3Cat:", error);
+        console.error("Error comprovant 3Cat directe:", error.message);
     }
+
+    // 2. Sempre afegim cerca a 3Cat (pot haver-hi episodis o contingut relacionat)
+    const threeCatSearchUrl = `https://www.3cat.cat/3cat/cercador/?text=${encodedName}`;
+    streams.push({
+        name: "3Cat",
+        title: `🔍 Cercar "${item.name}" a 3Cat`,
+        externalUrl: threeCatSearchUrl
+    });
+
+    // 3. Cerca a Filmin (plataforma de cinema en català)
+    const filminSearchUrl = `https://www.filmin.cat/cerca?q=${encodedName}`;
+    streams.push({
+        name: "Filmin",
+        title: `🔍 Cercar "${item.name}" a FilminCAT`,
+        externalUrl: filminSearchUrl
+    });
 
     console.log(`Returning ${streams.length} streams`);
     return Promise.resolve({ 
