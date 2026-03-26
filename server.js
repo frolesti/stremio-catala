@@ -1,3 +1,6 @@
+// Carreguem variables d'entorn (.env) per a TMDB_READ_TOKEN
+require('dotenv').config();
+
 const { getRouter } = require("stremio-addon-sdk");
 const addonInterface = require("./addon");
 const express = require('express');
