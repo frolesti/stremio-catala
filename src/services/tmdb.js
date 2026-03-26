@@ -9,7 +9,7 @@ const fetch = require("node-fetch");
 const { LRUCache } = require("../utils/cache");
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
-const TMDB_TOKEN = process.env.TMDB_READ_TOKEN;
+const TMDB_TOKEN = (process.env.TMDB_READ_TOKEN || "").trim();
 const WATCH_REGION = "ES"; // Espanya
 
 const tmdbIdCache = new LRUCache(2000);
