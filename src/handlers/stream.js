@@ -64,7 +64,7 @@ async function streamHandler({ type, id }) {
 
     // 4. Context per als proveïdors
     const slug = generateSlug(title);
-    const context = { title, imdbId: baseImdbId, type, slug, tmdbProviders };
+    const context = { title, imdbId: baseImdbId, fullId: id, type, slug, tmdbProviders };
 
     // 5. Executar tots els proveïdors en paral·lel
     const results = await Promise.allSettled(

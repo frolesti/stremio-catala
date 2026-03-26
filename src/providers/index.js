@@ -16,6 +16,7 @@ const providers = [
     require("./max"),           // Max (HBO)
     require("./movistar"),      // Movistar+
     require("./skyshowtime"),   // SkyShowtime
+    require("./torrentio"),      // Torrentio (torrents reproduïbles)
 ];
 
 module.exports = providers;
