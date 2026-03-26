@@ -1,17 +1,18 @@
 /**
  * Handler de streams.
  * Orquestra tots els proveïdors per generar enllaços de streaming.
- * 
+ *
  * Flux:
- * 1. Extraure IMDB ID base (sense temporada/episodi)
+ * 1. Extraure IMDB ID base + temporada/episodi
  * 2. Obtenir títol (catàleg local → Cinemeta fallback)
- * 3. Consultar TMDB watch/providers per saber plataformes disponibles
+ * 3. Consultar JustWatch per deep links directes (TMDB com a fallback)
  * 4. Executar tots els proveïdors en paral·lel
  * 5. Retornar streams combinats
  */
 const { generateSlug } = require("../utils/normalize");
 const cinemeta = require("../services/cinemeta");
 const { getWatchProviders } = require("../services/tmdb");
+const { getOffers } = require("../services/justwatch");
 const providers = require("../providers");
 
 // Catàleg local per resolució ràpida de títols
@@ -26,18 +27,32 @@ function getBaseImdbId(id) {
 }
 
 /**
+ * Extraure temporada i episodi de l'ID complet.
+ * "tt1234567:1:3" → { season: 1, episode: 3 }
+ * "tt1234567" → { season: null, episode: null }
+ */
+function parseSeasonEpisode(id) {
+    const parts = id.split(':');
+    return {
+        season: parts.length > 1 ? parseInt(parts[1]) : null,
+        episode: parts.length > 2 ? parseInt(parts[2]) : null
+    };
+}
+
+/**
  * Handler principal de streams.
  */
 async function streamHandler({ type, id }) {
     console.log(`[Stream] ${type}/${id}`);
 
-    // 1. Extreure IMDB ID base
+    // 1. Extreure IMDB ID base + temporada/episodi
     const baseImdbId = getBaseImdbId(id);
+    const { season, episode } = parseSeasonEpisode(id);
 
     // 2. Obtenir títol
     let title = null;
     const catalogItem = catalog.find(meta => meta.id === baseImdbId);
-    
+
     if (catalogItem) {
         title = catalogItem.name;
         console.log(`[Stream]   Catalog: "${title}"`);
@@ -51,20 +66,34 @@ async function streamHandler({ type, id }) {
         }
     }
 
-    // 3. Obtenir proveïdors de TMDB (en paral·lel si cal)
-    const tmdbProviders = await getWatchProviders(baseImdbId, type);
-    if (tmdbProviders) {
-        const allProviders = [
-            ...(tmdbProviders.flatrate || []),
-            ...(tmdbProviders.free || []),
-            ...(tmdbProviders.ads || [])
-        ];
-        console.log(`[Stream]   TMDB providers: ${allProviders.map(p => p.provider_name).join(', ') || 'none'}`);
+    // 3. Consultar JustWatch per deep links directes
+    const jwOffers = await getOffers(title, baseImdbId);
+    if (jwOffers) {
+        const platforms = Object.values(jwOffers).map(o => o.name);
+        const unique = [...new Set(platforms)];
+        console.log(`[Stream]   JustWatch: ${unique.join(', ')}`);
+    }
+
+    // 3b. Fallback a TMDB si JustWatch no ha trobat res
+    let tmdbProviders = null;
+    if (!jwOffers) {
+        tmdbProviders = await getWatchProviders(baseImdbId, type);
+        if (tmdbProviders) {
+            const allProviders = [
+                ...(tmdbProviders.flatrate || []),
+                ...(tmdbProviders.free || []),
+                ...(tmdbProviders.ads || [])
+            ];
+            console.log(`[Stream]   TMDB fallback: ${allProviders.map(p => p.provider_name).join(', ') || 'none'}`);
+        }
     }
 
     // 4. Context per als proveïdors
     const slug = generateSlug(title);
-    const context = { title, imdbId: baseImdbId, fullId: id, type, slug, tmdbProviders };
+    const context = {
+        title, imdbId: baseImdbId, fullId: id, type, slug,
+        season, episode, jwOffers, tmdbProviders
+    };
 
     // 5. Executar tots els proveïdors en paral·lel
     const results = await Promise.allSettled(

@@ -1,42 +1,50 @@
-/**
- * Proveïdor 3Cat (TV3/CCMA).
- * Comprova si el contingut té pàgina directa a 3cat.cat
- * i ofereix cerca al cercador de 3Cat.
- */
 const fetch = require("node-fetch");
 const StreamProvider = require("./base");
-const { generateSlug } = require("../utils/normalize");
 const { LRUCache } = require("../utils/cache");
 
 const pageCache = new LRUCache(500);
 
+/**
+ * 3Cat (TV3/CCMA).
+ * Prioritat: deep link JustWatch → pàgina directa per slug → cerca.
+ */
 class ThreeCatProvider extends StreamProvider {
     constructor() {
-        super("3cat", "3Cat", "📺");
+        super("3cat", "3Cat", "📺", [2237, 538], "https://www.3cat.cat/3cat/cercador/?text={query}");
     }
 
-    async getStreams({ title, slug, tmdbProviders }) {
+    async getStreams({ title, slug, season, episode, jwOffers, tmdbProviders }) {
         const streams = [];
-        const encodedName = encodeURIComponent(title);
+        const epLabel = this._episodeLabel(season, episode);
 
-        // 1. Comprovar si existeix pàgina directa a 3Cat
+        // 1. Deep link directe de JustWatch (URL de vídeo específic)
+        const deepLink = this._getDeepLink(jwOffers);
+        if (deepLink) {
+            streams.push({
+                name: "3Cat",
+                title: `▶️ Veure "${title}"${epLabel} a 3Cat`,
+                externalUrl: deepLink
+            });
+            return streams;
+        }
+
+        // 2. Comprovem pàgina directa per slug (HEAD request)
         const directUrl = `https://www.3cat.cat/3cat/${slug}/`;
         const hasPage = await this._checkDirectPage(slug, directUrl);
-        
         if (hasPage) {
             streams.push({
                 name: "3Cat",
-                title: `▶️ Veure "${title}" a 3Cat`,
+                title: `▶️ Veure "${title}"${epLabel} a 3Cat`,
                 externalUrl: directUrl
             });
         }
 
-        // 2. Si TMDB confirma que està a 3Cat, o si té pàgina directa, afegir cerca
-        const isOn3Cat = this._isOnPlatform(tmdbProviders, [2237, 538]); // 3Cat, Plex (free)
-        if (hasPage || isOn3Cat) {
+        // 3. Fallback: cerca si TMDB confirma o si hem trobat pàgina directa
+        if (hasPage || this._isOnPlatform(tmdbProviders)) {
+            const encodedName = encodeURIComponent(title);
             streams.push({
                 name: "3Cat",
-                title: `🔍 Cercar "${title}" a 3Cat`,
+                title: `🔍 Cercar "${title}"${epLabel} a 3Cat`,
                 externalUrl: `https://www.3cat.cat/3cat/cercador/?text=${encodedName}`
             });
         }
@@ -47,13 +55,8 @@ class ThreeCatProvider extends StreamProvider {
     async _checkDirectPage(slug, url) {
         const cached = pageCache.get(slug);
         if (cached !== undefined) return cached;
-
         try {
-            const response = await fetch(url, { 
-                method: 'HEAD', 
-                redirect: 'manual', 
-                timeout: 3000 
-            });
+            const response = await fetch(url, { method: 'HEAD', redirect: 'manual', timeout: 3000 });
             const exists = response.status === 200;
             pageCache.set(slug, exists);
             return exists;
@@ -62,16 +65,6 @@ class ThreeCatProvider extends StreamProvider {
             pageCache.set(slug, false);
             return false;
         }
-    }
-
-    _isOnPlatform(tmdbProviders, providerIds) {
-        if (!tmdbProviders) return false;
-        const all = [
-            ...(tmdbProviders.flatrate || []),
-            ...(tmdbProviders.free || []),
-            ...(tmdbProviders.ads || [])
-        ];
-        return all.some(p => providerIds.includes(p.provider_id));
     }
 }
 
