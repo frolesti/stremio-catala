@@ -67,7 +67,8 @@ async function streamHandler({ type, id }) {
     }
 
     // 3. Consultar JustWatch per deep links directes
-    const jwOffers = await getOffers(title, baseImdbId);
+    // 3. Consultar JustWatch per deep links (amb temporada si és sèrie)
+    const jwOffers = await getOffers(title, baseImdbId, season);
     if (jwOffers) {
         const platforms = Object.values(jwOffers).map(o => o.name);
         const unique = [...new Set(platforms)];

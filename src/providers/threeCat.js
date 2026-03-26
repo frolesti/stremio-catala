@@ -10,7 +10,8 @@ const pageCache = new LRUCache(500);
  */
 class ThreeCatProvider extends StreamProvider {
     constructor() {
-        super("3cat", "3Cat", "📺", [2237, 538], "https://www.3cat.cat/3cat/cercador/?text={query}");
+        // packageId 2237 = 3Cat a JustWatch (538 = Plex, NO és 3Cat)
+        super("3cat", "3Cat", "📺", [2237], "https://www.3cat.cat/3cat/cercador/?text={query}");
     }
 
     async getStreams({ title, slug, season, episode, jwOffers, tmdbProviders }) {
