@@ -14,6 +14,25 @@ const manifest = addonInterface.manifest;
 // Llegim la plantilla HTML una sola vegada a l'inici
 const landingTemplate = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
 
+// Middleware per afegir s-maxage a les respostes amb Cache-Control.
+// L'SDK de Stremio posa max-age però NO s-maxage, que és el que
+// Vercel necessita per cachear respostes a la CDN edge.
+// Sense això, cada petició desperta el serverless function (cold start)
+// i Stremio pot fer timeout → "Failed to fetch".
+//
+// s-maxage=604800 (7 dies): el catàleg és estàtic, no canvia sense redeploy.
+// Quan es fa deploy, Vercel invalida el cache automàticament.
+app.use((req, res, next) => {
+    const _setHeader = res.setHeader;
+    res.setHeader = function(name, value) {
+        if (name.toLowerCase() === 'cache-control' && typeof value === 'string' && !value.includes('s-maxage')) {
+            value += ', s-maxage=604800';
+        }
+        return _setHeader.call(this, name, value);
+    };
+    next();
+});
+
 // Servim el logo estàticament
 app.get('/logo.svg', (req, res) => {
     res.sendFile(path.join(__dirname, 'logo.svg'));

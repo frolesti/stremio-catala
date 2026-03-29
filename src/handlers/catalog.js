@@ -55,14 +55,22 @@ function catalogHandler({ type, id, extra }) {
     const limit = 100;
     const paginatedResults = results.slice(skip, skip + limit);
 
-    // 5. Retornar sense camps interns (_searchName)
-    const cleanResults = paginatedResults.map(({ _searchName, ...item }) => item);
+    // 5. Retornar sense camps interns i amb format MetaPreview net
+    const cleanResults = paginatedResults
+        .filter(item => item.poster) // Excloure items sense poster (Stremio no els pot mostrar)
+        .map(({ _searchName, popularity, language, released, ...item }) => item);
 
+    // Cache agressiu: el catàleg és estàtic (catalog.json), només canvia amb redeploy.
+    // - max-age=86400 (24h): cache al client Stremio
+    // - staleRevalidate=604800 (7d): Vercel CDN serveix contingut antic mentre revalida
+    // - staleError=2592000 (30d): si la funció falla, serveix cache antiga fins a 30 dies
+    // Amb s-maxage (afegit pel middleware), la CDN cacheja 7 dies.
+    // Total cobertura: fins a 14 dies sense cold start!
     return Promise.resolve({
         metas: cleanResults,
         cacheMaxAge: 86400,
-        staleRevalidate: 14400,
-        staleError: 604800
+        staleRevalidate: 604800,
+        staleError: 2592000
     });
 }
 

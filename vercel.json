@@ -8,6 +8,16 @@
     ],
     "routes": [
         {
+            "src": "/manifest.json",
+            "headers": { "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=604800" },
+            "dest": "server.js"
+        },
+        {
+            "src": "/catalog/(.*)",
+            "headers": { "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=604800" },
+            "dest": "server.js"
+        },
+        {
             "src": "/(.*)",
             "dest": "server.js"
         }
