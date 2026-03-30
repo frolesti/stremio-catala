@@ -11,6 +11,11 @@ const manifest = {
     resources: [
         "catalog",
         {
+            name: "meta",
+            types: ["series"],
+            idPrefixes: ["tt"]
+        },
+        {
             name: "stream",
             types: ["movie", "series"],
             idPrefixes: ["tt"]
@@ -21,7 +26,7 @@ const manifest = {
         {
             type: "movie",
             id: "catalan_movies",
-            name: "Pel·lícules en Català",
+            name: "En Català",
             extra: [
                 { name: "search", isRequired: false },
                 { name: "skip", isRequired: false },
@@ -31,7 +36,7 @@ const manifest = {
         {
             type: "series",
             id: "catalan_series",
-            name: "Sèries en Català",
+            name: "En Català",
             extra: [
                 { name: "search", isRequired: false },
                 { name: "skip", isRequired: false },

@@ -12,11 +12,13 @@
 const { addonBuilder } = require("stremio-addon-sdk");
 const manifest = require("./src/config/manifest");
 const catalogHandler = require("./src/handlers/catalog");
+const metaHandler = require("./src/handlers/meta");
 const streamHandler = require("./src/handlers/stream");
 
 const builder = new addonBuilder(manifest);
 
 builder.defineCatalogHandler(catalogHandler);
+builder.defineMetaHandler(metaHandler);
 builder.defineStreamHandler(streamHandler);
 
 module.exports = builder.getInterface();

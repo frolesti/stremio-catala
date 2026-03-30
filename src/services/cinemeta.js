@@ -36,4 +36,34 @@ async function getTitle(type, imdbId) {
     return null;
 }
 
-module.exports = { getTitle };
+/**
+ * Obté les metadades completes d'un contingut via Cinemeta.
+ * Inclou poster, descripció, videos (episodis), etc.
+ * 
+ * @param {string} type - "movie" o "series"
+ * @param {string} imdbId - ID d'IMDb (e.g. "tt1234567")
+ * @returns {Promise<Object|null>} Objecte meta complet o null
+ */
+async function getMeta(type, imdbId) {
+    const cacheKey = `meta:${type}:${imdbId}`;
+    const cached = cache.get(cacheKey);
+    if (cached !== undefined) return cached;
+
+    try {
+        const url = `${CINEMETA_BASE}/meta/${type}/${imdbId}.json`;
+        const response = await fetch(url, { timeout: 5000 });
+        if (response.ok) {
+            const data = await response.json();
+            const meta = data.meta || null;
+            cache.set(cacheKey, meta);
+            return meta;
+        }
+    } catch (error) {
+        console.error(`[Cinemeta] Error fetching meta ${imdbId}:`, error.message);
+    }
+
+    cache.set(cacheKey, null);
+    return null;
+}
+
+module.exports = { getTitle, getMeta };
