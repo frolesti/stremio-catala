@@ -77,7 +77,7 @@ function enrichVideos(cinemetaVideos, threeCatEpisodes, imdbId) {
         // Si Cinemeta no té videos, crear-los a partir de 3Cat
         return threeCatEpisodes.map(ep => ({
             id: `${imdbId}:${ep.season}:${ep.episode}`,
-            title: ep.title || `T${ep.season}xC${ep.episode}`,
+            title: cleanEpisodeTitle(ep.title),
             season: ep.season,
             episode: ep.episode,
             overview: ep.fullDescription || ep.description || '',
@@ -99,14 +99,28 @@ function enrichVideos(cinemetaVideos, threeCatEpisodes, imdbId) {
 
         return {
             ...video,
-            // Títol en català si disponible
-            title: threeCatEp.title || video.title,
+            // Títol net en català (Stremio ja mostra "S1E5" davant)
+            title: cleanEpisodeTitle(threeCatEp.title) || video.title,
             // Descripció de 3Cat (molt més rica que Cinemeta per contingut català)
             overview: threeCatEp.fullDescription || threeCatEp.description || video.overview || '',
             // Miniatura de 3Cat si disponible
             thumbnail: threeCatEp.thumbnail || video.thumbnail || '',
         };
     });
+}
+
+/**
+ * Neteja el títol d'un capítol per mostrar-lo a Stremio.
+ * Stremio ja mostra "S1E5" a la capçalera, així que eliminem el prefix "T1xC5 - "
+ * per evitar redundància.
+ * 
+ * "T1xC5 - Els nostres pares" → "Els nostres pares"
+ * "La nostra nova etapa (part 1)" → "La nostra nova etapa (part 1)"
+ */
+function cleanEpisodeTitle(title) {
+    if (!title) return '';
+    // Eliminar prefix TxCx - (amb o sense espais)
+    return title.replace(/^T\d+xC\d+\s*[-–—]\s*/i, '').trim();
 }
 
 /**

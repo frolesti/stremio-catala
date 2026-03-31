@@ -5,8 +5,8 @@ const threeCatService = require("../services/threecat");
  * 3Cat (TV3/CCMA).
  * Prioritat: capítol específic via API CCMA → deep link JustWatch → pàgina directa → cerca.
  * 
- * Per a sèries, utilitza l'API de la CCMA per trobar la URL exacta del capítol,
- * incloent-hi la descripció del capítol al títol del stream.
+ * Per a sèries, utilitza l'API de la CCMA per trobar la URL exacta del capítol.
+ * Les descripcions i títols dels capítols s'exposen via el meta handler.
  */
 class ThreeCatProvider extends StreamProvider {
     constructor() {
@@ -23,16 +23,9 @@ class ThreeCatProvider extends StreamProvider {
         if (isSeries) {
             const episodeData = await threeCatService.findEpisode(slug, season, episode);
             if (episodeData) {
-                let streamTitle = `▶️ Veure "${title}"${epLabel} a 3Cat`;
-                if (episodeData.description) {
-                    streamTitle += `\n📝 ${episodeData.description}`;
-                }
-                if (episodeData.duration) {
-                    streamTitle += ` (${episodeData.duration} min)`;
-                }
                 streams.push({
                     name: "3Cat",
-                    title: streamTitle,
+                    title: `▶️ Veure "${title}"${epLabel} a 3Cat`,
                     externalUrl: episodeData.url
                 });
                 return streams;
