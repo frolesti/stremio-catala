@@ -1,7 +1,8 @@
 // Carreguem variables d'entorn (.env) per a TMDB_READ_TOKEN
 require('dotenv').config();
 
-const { getRouter } = require("stremio-addon-sdk");
+// Importem getRouter directament per evitar carregar serveHTTP/Express dues vegades
+const getRouter = require("stremio-addon-sdk/src/getRouter");
 const addonInterface = require("./addon");
 const express = require('express');
 const fs = require('fs');
@@ -31,6 +32,13 @@ app.use((req, res, next) => {
         return _setHeader.call(this, name, value);
     };
     next();
+});
+
+// Health/keepalive endpoint per serveis de monitoratge (UptimeRobot, etc.)
+// Mantenir la funció "calenta" evita cold starts que fan que Stremio no trobi resultats.
+app.get('/health', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store');
+    res.json({ status: 'ok', version: manifest.version });
 });
 
 // Servim el logo estàticament

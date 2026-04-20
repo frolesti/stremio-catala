@@ -6,7 +6,18 @@
             "use": "@vercel/node"
         }
     ],
+    "crons": [
+        {
+            "path": "/health",
+            "schedule": "*/5 * * * *"
+        }
+    ],
     "routes": [
+        {
+            "src": "/health",
+            "headers": { "Cache-Control": "no-cache, no-store" },
+            "dest": "server.js"
+        },
         {
             "src": "/manifest.json",
             "headers": { "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=604800" },

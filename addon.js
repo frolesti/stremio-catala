@@ -9,7 +9,10 @@
  *   src/services/         → Cinemeta, TMDB
  *   src/utils/            → Normalització, cache, slugs
  */
-const { addonBuilder } = require("stremio-addon-sdk");
+// Importem directament els submòduls de l'SDK que necessitem.
+// Evitem require("stremio-addon-sdk") perquè carrega serveHTTP → Express,
+// afegint ~350ms al cold start de Vercel sense cap benefici.
+const addonBuilder = require("stremio-addon-sdk/src/builder");
 const manifest = require("./src/config/manifest");
 const catalogHandler = require("./src/handlers/catalog");
 const metaHandler = require("./src/handlers/meta");
